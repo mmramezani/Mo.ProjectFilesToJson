@@ -1,17 +1,23 @@
 ﻿using FluentAssertions;
+using Microsoft.Extensions.Options;
+using Mo.ProjectFilesToJson.Core.Models;
 using Mo.ProjectFilesToJson.Core.Services;
 
 namespace Mo.ProjectFilesToJson.Test;
 
 public class CustomFilterServiceTests
 {
-
     [Fact]
     public void ApplyPathFilters_WithIncludeAndExclude_ShouldFilterCorrectly()
     {
         // Arrange
-        var service = new CustomFilterService();
-        var filePaths = new System.Collections.Generic.List<string>
+        var options = Options.Create(new ProjectScannerSettings
+        {
+            ProjectGitsFileFolder = "SomeTestFolder"
+        });
+        var service = new CustomFilterService(options);
+
+        var filePaths = new List<string>
             {
                 "folder/a.cs",
                 "folder/b.exe",
@@ -19,8 +25,9 @@ public class CustomFilterServiceTests
                 "app.config",
                 "readme.md"
             };
-        var includePatterns = new System.Collections.Generic.List<string> { "*.cs", "readme.md" };
-        var excludePatterns = new System.Collections.Generic.List<string> { "*.exe", "app.config" };
+
+        var includePatterns = new List<string> { "*.cs", "readme.md" };
+        var excludePatterns = new List<string> { "*.exe", "app.config" };
 
         // Act
         var result = service.ApplyPathFilters(filePaths, includePatterns, excludePatterns);
@@ -37,15 +44,20 @@ public class CustomFilterServiceTests
     public void ApplyPathFilters_EmptyIncludeExclude_ShouldReturnAll()
     {
         // Arrange
-        var service = new CustomFilterService();
-        var filePaths = new System.Collections.Generic.List<string>
+        var options = Options.Create(new ProjectScannerSettings
+        {
+            ProjectGitsFileFolder = "SomeTestFolder"
+        });
+        var service = new CustomFilterService(options);
+
+        var filePaths = new List<string>
             {
                 "folder/a.cs",
                 "folder/b.exe"
             };
 
         // Act
-        var result = service.ApplyPathFilters(filePaths, new System.Collections.Generic.List<string>(), new System.Collections.Generic.List<string>());
+        var result = service.ApplyPathFilters(filePaths, new List<string>(), new List<string>());
 
         // Assert
         result.Should().Equal(filePaths);
