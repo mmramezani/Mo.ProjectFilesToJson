@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Mo.ProjectFilesToJson.ConsoleApp;
 using Mo.ProjectFilesToJson.Core.Interfaces;
 using Mo.ProjectFilesToJson.Core.Models;
+using Mo.ProjectFilesToJson.Core.Services;
 
 
 internal class Program
@@ -10,13 +12,36 @@ internal class Program
 
     static void Main(string[] args)
     {
-        var serviceProvider = Helper.ConfigureServices();
+        // 1. Build configuration
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
+        IConfiguration configuration = builder.Build();
+
+        // 2. Create ServiceCollection, pass in configuration
+        var services = new ServiceCollection();
+
+        // 3. Bind ProjectScannerSettings from config
+        //    Then register it as a singleton for injection
+        services.Configure<ProjectScannerSettings>(configuration.GetSection("ProjectScannerSettings"));
+
+        // 4. Register the rest of your services
+        //    (You can do this in a separate method if you like, or inline)
+        services.AddSingleton<IGitIgnoreService, GitIgnoreService>();
+        services.AddSingleton<IFileScanService, FileScanService>();
+        services.AddSingleton<IFileFormatService, FileFormatService>();
+        services.AddSingleton<ICustomFilterService, CustomFilterService>();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        // now retrieve your services
         var gitIgnoreService = serviceProvider.GetService<IGitIgnoreService>();
         var fileScanService = serviceProvider.GetService<IFileScanService>();
         var fileFormatService = serviceProvider.GetService<IFileFormatService>();
         var customFilterService = serviceProvider.GetService<ICustomFilterService>();
 
+        // 5. The rest of your existing Program logic remains mostly the same
         var lastUsedSettings = Helper.LoadUserSettings(USER_SETTINGS_FILE);
 
         UserScanSettings finalSettings;
@@ -52,13 +77,9 @@ internal class Program
 
         string output;
         if (finalSettings.FormatIndex == 0)
-        {
             output = fileFormatService!.FormatAsJson(fileContents);
-        }
         else
-        {
             output = fileFormatService!.FormatWithDivider(fileContents);
-        }
 
         try
         {

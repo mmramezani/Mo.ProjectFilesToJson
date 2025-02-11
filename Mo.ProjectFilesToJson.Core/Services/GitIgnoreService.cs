@@ -1,23 +1,34 @@
-﻿using Mo.ProjectFilesToJson.Core.Interfaces;
+﻿using Microsoft.Extensions.Options;
+using Mo.ProjectFilesToJson.Core.Interfaces;
+using Mo.ProjectFilesToJson.Core.Models;
 
 namespace Mo.ProjectFilesToJson.Core.Services;
 
 public class GitIgnoreService : IGitIgnoreService
 {
-    private const string PROJECT_GITS_FILE_FOLDER = @"G:\Projects\Mo.ProjectFilesToJson\Mo.ProjectFilesToJson.Console\ProjectGitsFile";
+    private readonly string _projectGitsFileFolder;
+
+    public GitIgnoreService(IOptions<ProjectScannerSettings> settings)
+    {
+        // Now _projectGitsFileFolder is read from appsettings.json
+        _projectGitsFileFolder = settings.Value.ProjectGitsFileFolder;
+    }
 
     public List<string> GetAvailableProjects()
     {
-        if (!Directory.Exists(PROJECT_GITS_FILE_FOLDER)) return new List<string>();
-        var directories = Directory.GetDirectories(PROJECT_GITS_FILE_FOLDER);
+        if (!Directory.Exists(_projectGitsFileFolder))
+            return new List<string>();
+
+        var directories = Directory.GetDirectories(_projectGitsFileFolder);
         return directories.Select(Path.GetFileName).ToList();
     }
 
     public List<string> LoadGitIgnorePatterns(string projectFolderName)
     {
         var patterns = new List<string>();
-        string gitIgnorePath = Path.Combine(PROJECT_GITS_FILE_FOLDER, projectFolderName, ".gitignore");
-        if (!File.Exists(gitIgnorePath)) return patterns;
+        string gitIgnorePath = Path.Combine(_projectGitsFileFolder, projectFolderName, ".gitignore");
+        if (!File.Exists(gitIgnorePath))
+            return patterns;
 
         var lines = File.ReadAllLines(gitIgnorePath);
         foreach (var line in lines)

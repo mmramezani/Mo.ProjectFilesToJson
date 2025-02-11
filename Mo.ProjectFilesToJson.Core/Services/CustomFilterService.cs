@@ -1,22 +1,30 @@
-﻿using Mo.ProjectFilesToJson.Core.Interfaces;
+﻿using Microsoft.Extensions.Options;
+using Mo.ProjectFilesToJson.Core.Interfaces;
+using Mo.ProjectFilesToJson.Core.Models;
 
 namespace Mo.ProjectFilesToJson.Core.Services;
 
 public class CustomFilterService : ICustomFilterService
 {
-    private const string PROJECT_GITS_FILE_FOLDER = @"G:\Projects\Mo.ProjectFilesToJson\Mo.ProjectFilesToJson.Console\ProjectGitsFile";
+    private readonly string _projectGitsFileFolder;
     private const string INCLUDE_FILE_AND_FOLDERS = "OnlyInclude.txt";
     private const string EXCLUDE_FILE_AND_FOLDERS = "AlsoExclude.txt";
 
+    public CustomFilterService(IOptions<ProjectScannerSettings> settings)
+    {
+        // Now _projectGitsFileFolder is read from appsettings.json
+        _projectGitsFileFolder = settings.Value.ProjectGitsFileFolder;
+    }
+
     public List<string> LoadIncludePatterns(string projectFolderName)
     {
-        string path = Path.Combine(PROJECT_GITS_FILE_FOLDER, projectFolderName, INCLUDE_FILE_AND_FOLDERS);
+        string path = Path.Combine(_projectGitsFileFolder, projectFolderName, INCLUDE_FILE_AND_FOLDERS);
         return LoadPatternsFromFile(path);
     }
 
     public List<string> LoadExcludePatterns(string projectFolderName)
     {
-        string path = Path.Combine(PROJECT_GITS_FILE_FOLDER, projectFolderName, EXCLUDE_FILE_AND_FOLDERS);
+        string path = Path.Combine(_projectGitsFileFolder, projectFolderName, EXCLUDE_FILE_AND_FOLDERS);
         return LoadPatternsFromFile(path);
     }
 
@@ -26,11 +34,16 @@ public class CustomFilterService : ICustomFilterService
 
         if (includePatterns.Count > 0)
         {
-            filtered = filtered.Where(p => MatchesAnyPattern(p, includePatterns)).ToList();
+            filtered = filtered
+                .Where(p => MatchesAnyPattern(p, includePatterns))
+                .ToList();
         }
+
         if (excludePatterns.Count > 0)
         {
-            filtered = filtered.Where(p => !MatchesAnyPattern(p, excludePatterns)).ToList();
+            filtered = filtered
+                .Where(p => !MatchesAnyPattern(p, excludePatterns))
+                .ToList();
         }
 
         return filtered;
@@ -43,7 +56,7 @@ public class CustomFilterService : ICustomFilterService
 
         var allText = File.ReadAllText(filePath);
         var separators = new[] { '\r', '\n', ',' };
-        var tokens = allText.Split(separators, System.StringSplitOptions.RemoveEmptyEntries);
+        var tokens = allText.Split(separators, StringSplitOptions.RemoveEmptyEntries);
 
         foreach (var raw in tokens)
         {
@@ -69,28 +82,28 @@ public class CustomFilterService : ICustomFilterService
     {
         var normPath = filePath.Replace("\\", "/");
 
-        if (pattern.StartsWith("*.", System.StringComparison.Ordinal))
+        if (pattern.StartsWith("*.", StringComparison.Ordinal))
         {
             var ext = Path.GetExtension(normPath);
             var patternExt = pattern.Substring(1);
-            return ext.Equals(patternExt, System.StringComparison.OrdinalIgnoreCase);
+            return ext.Equals(patternExt, StringComparison.OrdinalIgnoreCase);
         }
 
-        // Split the pattern on '.' and check if we have exactly two parts
+        // If pattern is "filename.ext"
         var dotParts = pattern.Split('.');
         if (dotParts.Length == 2 &&
             !string.IsNullOrWhiteSpace(dotParts[0]) &&
             !string.IsNullOrWhiteSpace(dotParts[1]))
         {
-            // We have something like "filename.ext"
             var fileName = Path.GetFileName(normPath);
             return fileName.Equals(pattern, StringComparison.OrdinalIgnoreCase);
         }
 
+        // Otherwise, just do a segment-based match
         var segments = normPath.Split('/');
         foreach (var seg in segments)
         {
-            if (seg.Equals(pattern, System.StringComparison.OrdinalIgnoreCase))
+            if (seg.Equals(pattern, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
