@@ -12,9 +12,14 @@ public class CustomFilterService : ICustomFilterService
 
     public CustomFilterService(IOptions<ProjectScannerSettings> settings)
     {
-        // Now _projectGitsFileFolder is read from appsettings.json
-        _projectGitsFileFolder = settings.Value.ProjectGitsFileFolder;
+        var folder = settings.Value.ProjectGitsFileFolder;
+        if (!Path.IsPathRooted(folder))
+        {
+            folder = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), folder));
+        }
+        _projectGitsFileFolder = folder;
     }
+
 
     public List<string> LoadIncludePatterns(string projectFolderName)
     {

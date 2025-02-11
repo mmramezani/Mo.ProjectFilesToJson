@@ -10,8 +10,13 @@ public class GitIgnoreService : IGitIgnoreService
 
     public GitIgnoreService(IOptions<ProjectScannerSettings> settings)
     {
-        // Now _projectGitsFileFolder is read from appsettings.json
-        _projectGitsFileFolder = settings.Value.ProjectGitsFileFolder;
+        var folder = settings.Value.ProjectGitsFileFolder;
+        if (!Path.IsPathRooted(folder))
+        {
+            // Resolve it relative to the current directory (or any other base you prefer)
+            folder = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), folder));
+        }
+        _projectGitsFileFolder = folder;
     }
 
     public List<string> GetAvailableProjects()
