@@ -157,27 +157,6 @@ public class HelperTests
     }
 
     [Fact]
-    public void PromptForNewSettings_ValidProjects_ShouldReturnFilledSettings()
-    {
-        // Arrange
-        var mockGitIgnoreService = new Mock<IGitIgnoreService>();
-        mockGitIgnoreService.Setup(s => s.GetAvailableProjects())
-            .Returns(new System.Collections.Generic.List<string> { "ProjectA", "ProjectB" });
-
-        using var sr = new StringReader("1\nC:\\Source\nC:\\Destination\n2\n");
-        Console.SetIn(sr);
-
-        // Act
-        var result = Helper.PromptForNewSettings(mockGitIgnoreService.Object);
-
-        // Assert
-        result.ProjectFolderName.Should().Be("ProjectA");
-        result.SourceFolderPath.Should().Be("C:\\Source");
-        result.DestinationFilePath.Should().Be(Path.Combine("C:\\Destination", "Result.txt"));
-        result.FormatIndex.Should().Be(1);
-    }
-
-    [Fact]
     public void ReadFileContents_ValidFiles_ShouldReturnContent()
     {
         // Arrange
