@@ -1,5 +1,8 @@
 # Mo.ProjectFilesToJson
 
+<img width="406" alt="image" src="https://github.com/user-attachments/assets/94b48777-b7e5-4fcd-bb4b-237ed3f0fe1c" />
+
+
 A .NET console application designed to **scan the entire file structure** of a project (e.g., .NET, Java, Node, Python, Vue, or any other easily configurable type) and produce a consolidated **JSON** or **plain-text** output of those files. It is particularly useful for sharing large codebases with LLMs (Large Language Models such as ChatGPT) that have strict token or size limits.
 
 ---
