@@ -25,7 +25,6 @@ public class AppEngine
     {
         // 1) Load or Prompt for settings
         var lastUsedSettings = Helper.LoadUserSettings(_userSettingsFile);
-
         UserScanSettings finalSettings;
         if (lastUsedSettings != null)
         {
@@ -40,7 +39,7 @@ public class AppEngine
             else
             {
                 finalSettings = PromptForSettingsOrAbort();
-                if (finalSettings == null) return; // user aborted or no projects found
+                if (finalSettings == null) return;
             }
         }
         else
@@ -49,25 +48,32 @@ public class AppEngine
             if (finalSettings == null) return;
         }
 
-        // 2) Gather and filter file paths
-        var gitIgnorePatterns = _gitIgnoreService.LoadGitIgnorePatterns(finalSettings.ProjectFolderName);
-        var allFilePaths = _fileScanService.GetAllFilePaths(finalSettings.SourceFolderPath, gitIgnorePatterns);
+        // 2) Gather ALL file paths (unfiltered) + .gitignore file paths
+        var (allFiles, gitIgnoreFiles) = _fileScanService.GetAllFilePaths(finalSettings.SourceFolderPath);
 
+        // 3) If we have .gitignore files, read them and apply .gitignore rules
+        var gitIgnorePatterns = _gitIgnoreService.LoadGitIgnorePatterns(
+            gitIgnoreFiles,
+            finalSettings.SourceFolderPath
+        );
+        var afterGitIgnore = _customFilterService.ApplyGitIgnoreFilters(allFiles, gitIgnorePatterns);
+
+        // 4) Now apply your custom config-based filters
         var includePatterns = _customFilterService.LoadIncludePatterns(finalSettings.ProjectFolderName);
         var excludePatterns = _customFilterService.LoadExcludePatterns(finalSettings.ProjectFolderName);
-        var filteredPaths = _customFilterService.ApplyPathFilters(allFilePaths, includePatterns, excludePatterns);
+        var filteredPaths = _customFilterService.ApplyPathFilters(afterGitIgnore, includePatterns, excludePatterns);
 
-        // 3) Read contents
+        // 5) Read the remaining file contents
         var fileContents = Helper.ReadFileContents(finalSettings.SourceFolderPath, filteredPaths);
 
-        // 4) Format output
+        // 6) Format output
         string output;
         if (finalSettings.FormatIndex == 0)
             output = _fileFormatService.FormatAsJson(fileContents);
         else
             output = _fileFormatService.FormatWithDivider(fileContents);
 
-        // 5) Save output
+        // 7) Save to disk
         try
         {
             File.WriteAllText(finalSettings.DestinationFilePath, output);
@@ -78,24 +84,16 @@ public class AppEngine
             Console.WriteLine($"Error saving file: {ex.Message}");
         }
 
-        // 6) Save settings
+        // 8) Save user settings
         Helper.SaveUserSettings(finalSettings, _userSettingsFile);
-
         Console.WriteLine("Processing completed.");
     }
 
-    /// <summary>
-    /// A small helper method that prompts for new settings and returns them,
-    /// or returns null if no projects are found (and user can't continue).
-    /// </summary>
     private UserScanSettings? PromptForSettingsOrAbort()
     {
         var newSettings = Helper.PromptForNewSettings(_gitIgnoreService);
-        // If PromptForNewSettings returns something invalid or user wants to abort, handle that:
         if (string.IsNullOrWhiteSpace(newSettings.ProjectFolderName))
-        {
             return null;
-        }
         return newSettings;
     }
 }

@@ -7,18 +7,10 @@ namespace Mo.ProjectFilesToJson.Core.Services;
 public class GitIgnoreService : IGitIgnoreService
 {
     private readonly ProjectSettings _scannerSettings;
-    private readonly string _projectGitsFileFolder;
 
     public GitIgnoreService(IOptions<ProjectSettings> settings)
     {
         _scannerSettings = settings.Value;
-
-        var folder = _scannerSettings.ProjectGitsFileFolder;
-        if (!Path.IsPathRooted(folder))
-        {
-            folder = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), folder));
-        }
-        _projectGitsFileFolder = folder;
     }
 
     public List<string> GetAvailableProjects()
@@ -29,33 +21,31 @@ public class GitIgnoreService : IGitIgnoreService
             .ToList();
     }
 
-    public List<string> LoadGitIgnorePatterns(string projectFolderName)
+    public List<string> LoadGitIgnorePatterns(List<string> gitIgnoreRelativePaths, string baseFolderPath)
     {
-        var results = new List<string>();
-        var projectPath = Path.Combine(_projectGitsFileFolder, projectFolderName);
+        var combinedPatterns = new List<string>();
 
-        if (!Directory.Exists(projectPath))
+        if (gitIgnoreRelativePaths == null || gitIgnoreRelativePaths.Count == 0)
+            return combinedPatterns;
+
+        foreach (var relativePath in gitIgnoreRelativePaths)
         {
-            Console.WriteLine($"[Warning] The folder '{projectPath}' does not exist. Skipping .gitignore loading...");
-            return results;
+            var fullPath = Path.Combine(baseFolderPath, relativePath);
+            if (!File.Exists(fullPath))
+                continue;
+
+            var lines = File.ReadAllLines(fullPath);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+                // Skip empty lines or comment lines
+                if (string.IsNullOrWhiteSpace(trimmed)) continue;
+                if (trimmed.StartsWith("#")) continue;
+
+                combinedPatterns.Add(trimmed);
+            }
         }
 
-        var gitIgnorePath = Path.Combine(projectPath, ".gitignore");
-        if (!File.Exists(gitIgnorePath))
-        {
-            Console.WriteLine($"[Warning] No .gitignore found for '{projectFolderName}' in '{projectPath}'. Skipping .gitignore loading...");
-            return results;
-        }
-
-        var lines = File.ReadAllLines(gitIgnorePath);
-        foreach (var line in lines)
-        {
-            var trimmed = line.Trim();
-            if (string.IsNullOrWhiteSpace(trimmed)) continue;
-            if (trimmed.StartsWith("#")) continue;
-            results.Add(trimmed);
-        }
-
-        return results;
+        return combinedPatterns;
     }
 }

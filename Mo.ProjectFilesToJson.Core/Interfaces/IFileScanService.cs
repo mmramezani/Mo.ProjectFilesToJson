@@ -2,5 +2,5 @@
 
 public interface IFileScanService
 {
-    List<string> GetAllFilePaths(string folderPath, List<string> ignoreLines);
+    (List<string> AllFiles, List<string> GitIgnoreFiles) GetAllFilePaths(string folderPath);
 }

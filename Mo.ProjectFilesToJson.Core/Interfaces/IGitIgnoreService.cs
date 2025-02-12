@@ -3,5 +3,5 @@
 public interface IGitIgnoreService
 {
     List<string> GetAvailableProjects();
-    List<string> LoadGitIgnorePatterns(string projectFolderName);
+    List<string> LoadGitIgnorePatterns(List<string> gitIgnoreRelativePaths, string baseFolderPath);
 }

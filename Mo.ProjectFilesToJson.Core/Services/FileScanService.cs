@@ -6,26 +6,36 @@ namespace Mo.ProjectFilesToJson.Core.Services;
 
 public class FileScanService : IFileScanService
 {
-    public List<string> GetAllFilePaths(string folderPath, List<string> ignoreLines)
+    public (List<string> AllFiles, List<string> GitIgnoreFiles) GetAllFilePaths(string folderPath)
     {
-        var result = new List<string>();
-        if (!Directory.Exists(folderPath)) return result;
+        var allFiles = new List<string>();
+        var gitIgnoreFiles = new List<string>();
 
-        var gitIgnoreEntries = ParseGitIgnoreEntries(ignoreLines);
-        var allFiles = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+        if (!Directory.Exists(folderPath))
+            return (allFiles, gitIgnoreFiles);
 
-        foreach (var file in allFiles)
+        // Grab every file in the folder (recursively).
+        var files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+
+        foreach (var file in files)
         {
+            // Convert to relative path for consistency.
             var relativePath = file.Substring(folderPath.Length)
                                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                                    .Replace("\\", "/");
 
-            if (!IsIgnored(relativePath, gitIgnoreEntries))
+            // If it's a .gitignore, store separately
+            if (Path.GetFileName(file).Equals(".gitignore", StringComparison.OrdinalIgnoreCase))
             {
-                result.Add(relativePath);
+                gitIgnoreFiles.Add(relativePath);
+            }
+            else
+            {
+                allFiles.Add(relativePath);
             }
         }
-        return result;
+
+        return (allFiles, gitIgnoreFiles);
     }
 
     private List<GitIgnoreEntry> ParseGitIgnoreEntries(List<string> lines)
