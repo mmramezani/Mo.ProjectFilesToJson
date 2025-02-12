@@ -21,7 +21,6 @@ A .NET console application designed to **scan the entire file structure** of a p
    - [Mo.ProjectFilesToJson.Console (Console Layer)](#moprojectfilestojsonconsole-console-layer)
    - [Mo.ProjectFilesToJson.Core (Core Library)](#moprojectfilestojsoncore-core-library)
 8. [Tests](#tests)
-   - [tests/Mo.ProjectFilesToJson.Test (Test Project)](#testsmo-projectfilestojsontest-test-project)
 9. [Contributing](#contributing)
 10. [License](#license)
 
@@ -33,56 +32,60 @@ Modern AI language models (LLMs) such as ChatGPT are incredibly powerful for:
 - Generating documentation.
 - Reviewing code snippets.
 - Assisting with code refactoring.
-- Enhancing code with additional features (e.g., optimizing performance, improving security, or integrating new functionalities). 
+- Enhancing code with additional features (e.g., optimizing performance or improving security).
 
-However, managing a large, evolving codebase when working with these models can be cumbersome. Many models (and their interfaces) don’t provide a straightforward way to keep multiple files in sync—some don’t even allow uploading a “project” for collective analysis.
+However, managing a large, evolving codebase when working with these models can be cumbersome. Many models don’t provide an easy way to upload an entire project for collective analysis, forcing you to combine files manually or juggle them across multiple prompts.
 
-Every time you update your code, you often have to re-upload or recreate those files in a new session, which quickly becomes tedious. This project bridges that gap by letting you selectively scan and consolidate all relevant files into a single output, ensuring you always have the latest version of your code ready to feed into an LLM.
-
-Essentially, **Mo.ProjectFilesToJson** allows large repositories to be broken down or combined into a more LLM-friendly format.
+**Mo.ProjectFilesToJson** lets you selectively scan your project, gather the relevant files (while respecting `.gitignore` and custom filters), and produce an easy-to-paste or upload **one-file** output suitable for LLM consumption.
 
 ---
 
 ## Project Highlights
 
-- **Scan Any Project**: Currently configured for `.NET`, `Java`, `Node`, `Python`, and `VueJs`, but easily extensible to other languages or frameworks (e.g., Angular, React).
-- **Smart Filtering**: Honors `.gitignore` patterns and custom include/exclude patterns to limit scanning to only relevant files (e.g., `.cs`, `.java`, `.py`, `.js`, `.json`).
+- **Scan Any Project**: The default configuration supports `.NET`, `Java`, `Node`, `Python`, and `VueJs`, but you can easily add more frameworks (e.g., Angular, React).
+- **Smart Filtering**:
+  1. Automatically detects all `.gitignore` files **in your target folder** and applies their rules (including negative rules like `!somefile`).
+  2. Uses custom include/exclude patterns defined in `appsettings.json`.
 - **Flexible Output**: Choose between:
   - **JSON** (machine-readable)
   - **Simple Divider** (human-readable)
-- **User Settings**: The console app saves your last used configuration (source path, destination, format, etc.) so you can re-run quickly after code changes.
-- **Scalable**: Works for small, medium, and large projects. You can also pick a subfolder to scan if you only need partial code.
+- **User Settings**: Caches your last run’s configuration in `userSettings.json`. Re-run quickly after making changes to your source code!
+- **Scalable**: Works for small or large projects. You can also point to a subfolder if you only want part of a repository.
 
 ---
 
 ## How It Works
 
 1. **Prompt for or Load Existing Settings**  
-   When you start the console app, it looks for a `userSettings.json` file. If found, it offers to reuse those settings (source directory, project type, etc.). Otherwise, it prompts you to enter new settings.
-
-2. **Gather Files and Apply Filters**  
-   The application reads the `.gitignore` (if available) for your chosen project type and also applies custom include/exclude patterns defined in `appsettings.json`.
-
-3. **Read File Contents**  
-   For each file that passes the filters, the application loads the file contents into memory.
-
-4. **Format Output**  
-   Depending on your choice (JSON or Simple Divider format), the tool transforms these files into a single textual output.
-
-5. **Save the Results**  
-   The resulting output is saved to a destination file of your choice. By default, it might be something like `C:\SomeFolder\Result.txt` if you leave certain inputs blank.
-
-6. **Re-run as Needed**  
-   Since your settings are saved, you can quickly re-run the tool to generate updated output whenever you modify your code.
+   - The console app loads `userSettings.json` if it exists. Otherwise, it prompts you for:
+     - Which project type (e.g., `DotNet`, `Java`, etc.).
+     - A source folder path.
+     - A destination path.
+     - Output format (JSON or Simple Divider).
+2. **Gather Files and `.gitignore`**  
+   - The app **recursively** scans the entire `SourceFolderPath`.
+   - It **separates** out any `.gitignore` files it finds (including in subfolders).
+   - It reads those `.gitignore` files and merges all their patterns.
+3. **Apply Filters**  
+   - First, `.gitignore` patterns are applied (removing files/folders they specify, unless “negated” with `!pattern`).
+   - Then, custom include/exclude patterns from `appsettings.json` are applied (further filtering the final list).
+4. **Read File Contents**  
+   - The remaining files are read into memory.
+5. **Format Output**  
+   - Depending on your choice (JSON or Simple Divider), the tool transforms these files into a single textual output.
+6. **Save the Results**  
+   - The output is written to a destination file of your choice, such as `C:\Output\Result.txt`.
+7. **Re-run as Needed**  
+   - Because your settings are saved, you can simply re-run to generate fresh output anytime you modify your code.
 
 ---
 
 ## Installation & Setup
 
 1. **Clone or Download** this repository.
-2. Ensure you have [.NET 6 or higher](https://dotnet.microsoft.com/download) installed.
-3. Open a terminal/command prompt in the project directory (where `Mo.ProjectFilesToJson.Console.csproj` is located).
-4. **Build the solution** (if needed):
+2. Ensure you have [.NET 9+](https://dotnet.microsoft.com/download) installed.
+3. Open a terminal or command prompt in the solution folder.
+4. **Build the solution**:
    ```bash
    dotnet build
    ```
@@ -92,31 +95,20 @@ Essentially, **Mo.ProjectFilesToJson** allows large repositories to be broken do
 ## Usage
 
 ### Running the Console App
-
-From within the solution directory, run:
+From within the solution directory (where `Mo.ProjectFilesToJson.Console.csproj` is), run:
 
 ```bash
 cd Mo.ProjectFilesToJson.Console
 dotnet run
 ```
 
-The application will launch and:
-- Attempt to load existing user settings from `userSettings.json`.
-- If settings are found, it will prompt you:
-  - **"Do you want to continue with these settings (Y/N)?"**
-  - **Y** = Use the same settings and proceed directly to file scanning.
-  - **N** = Prompt for new settings.
-- If no settings file is found, it will prompt you for new settings.
-
 ### Selecting Projects and Paths
+You’ll be asked to:
 
-During the prompt, you will:
-- Select your source project (e.g., DotNet, Java, Node, Python, VueJs).
-- Enter the absolute source folder path (e.g., `D:\MyProjects\AwesomeApp`).
-- Enter the destination path (file or folder path).
-- Select the output text format:
-  - **JSON**: The scanned files appear in a JSON array.
-  - **Simple Divider**: Each file is wrapped with `--FILE <relative_path>` and `--END (<filename>)` markers.
+- Choose one of the known project “profiles” (like DotNet, Java, Node, etc.).
+- Specify the absolute source folder path (e.g., `D:\MyProjects\AwesomeApp`).
+- Specify the destination file (where final output will be saved).
+- Choose the text format (JSON or Simple Divider).
 
 ### Formats: JSON or Simple Divider
 
@@ -134,8 +126,8 @@ During the prompt, you will:
 ]
 ```
 
-#### Simple Divider Format Example
-```plaintext
+#### Simple Divider Example
+```
 --FILE Controllers/HomeController.cs
 public class HomeController {
    ...
@@ -151,18 +143,25 @@ public class HomeController {
 
 ## Configuration
 
-Configuration settings are found in `appsettings.json`.
-
-#### Adding More Projects
-To add a new project type (e.g., Angular), update the `Projects` array:
+### Adding More Projects
+Open `appsettings.json` and add a new entry under "Projects":
 
 ```json
 {
   "Name": "Angular",
-  "OnlyIncludePatterns": ["*.ts", "*.json", "*.html", "*.css"],
-  "AlsoExcludePatterns": [".git", "node_modules"]
+  "OnlyIncludePatterns": ["*.ts", "*.html", "*.css", "*.json"],
+  "AlsoExcludePatterns": ["node_modules", ".git"]
 }
 ```
+
+### Handling .gitignore Files
+By default, Mo.ProjectFilesToJson automatically discovers all `.gitignore` files in your `SourceFolderPath` and applies their rules.
+
+### Custom Include/Exclude Patterns
+Each project entry in `appsettings.json` can specify:
+
+- `OnlyIncludePatterns` (e.g., `['*.cs']` to include only C# files)
+- `AlsoExcludePatterns` (e.g., `['.vs']` to exclude `.vs` folder)
 
 ---
 
@@ -170,20 +169,19 @@ To add a new project type (e.g., Angular), update the `Projects` array:
 
 ### Mo.ProjectFilesToJson.Console (Console Layer)
 - `Program.cs`: Main entry point.
-- `AppEngine.cs`: Orchestrates the workflow.
-- `AppSetup.cs`: Handles dependency injection.
+- `AppEngine.cs`: Orchestrates scanning/filtering/formatting workflows.
+- `Helper.cs`: Utility methods.
 
 ### Mo.ProjectFilesToJson.Core (Core Library)
-- `GitIgnoreService.cs`: Handles `.gitignore` parsing.
-- `FileScanService.cs`: Scans files based on filters.
-- `FileFormatService.cs`: Formats output data.
+- `FileScanService.cs`: Scans folders.
+- `GitIgnoreService.cs`: Reads `.gitignore` files.
+- `CustomFilterService.cs`: Applies filtering.
+- `FileFormatService.cs`: Formats output.
 
 ---
 
 ## Tests
-
-To run the tests:
-
+Run tests via:
 ```bash
 cd tests
 dotnet test
@@ -192,14 +190,7 @@ dotnet test
 ---
 
 ## Contributing
+Fork the repo, create a branch, make changes, and submit a PR.
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Make your changes.
-4. Submit a pull request.
 
----
 
-## License
-
-This project does not currently specify an open-source license. Check the repository for further details.
