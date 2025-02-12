@@ -15,23 +15,19 @@ public class AppSetup
 
     public AppSetup()
     {
-        // 1) Build configuration
         Configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .Build();
 
-        // 2) Create ServiceCollection and bind config
         var services = new ServiceCollection();
-        services.Configure<ProjectScannerSettings>(Configuration.GetSection("ProjectScannerSettings"));
+        services.Configure<ProjectSettings>(Configuration.GetSection("ProjectScannerSettings"));
 
-        // 3) Register your services
         services.AddSingleton<IGitIgnoreService, GitIgnoreService>();
         services.AddSingleton<IFileScanService, FileScanService>();
         services.AddSingleton<IFileFormatService, FileFormatService>();
         services.AddSingleton<ICustomFilterService, CustomFilterService>();
 
-        // 4) Build the provider
         ServiceProvider = services.BuildServiceProvider();
     }
 }

@@ -11,7 +11,7 @@ public class CustomFilterServiceTests
     public void ApplyPathFilters_WithIncludeAndExclude_ShouldFilterCorrectly()
     {
         // Arrange
-        var options = Options.Create(new ProjectScannerSettings
+        var options = Options.Create(new ProjectSettings
         {
             ProjectGitsFileFolder = "SomeTestFolder"
         });
@@ -44,7 +44,7 @@ public class CustomFilterServiceTests
     public void ApplyPathFilters_EmptyIncludeExclude_ShouldReturnAll()
     {
         // Arrange
-        var options = Options.Create(new ProjectScannerSettings
+        var options = Options.Create(new ProjectSettings
         {
             ProjectGitsFileFolder = "SomeTestFolder"
         });

@@ -4,22 +4,10 @@ namespace Mo.ProjectFilesToJson.Core.Services;
 
 public static class GitIgnoreParser
 {
-    /// <summary>
-    /// Checks if a given relative path matches any of the ignore patterns.
-    /// For simplicity, we handle just a few typical patterns like
-    ///   - Exact matches
-    ///   - Wildcards like *.exe
-    ///   - Directory patterns
-    /// This can be improved or replaced with an advanced .gitignore parser library.
-    /// </summary>
     public static bool IsIgnored(string relativePath, List<string> patterns)
     {
         foreach (var pattern in patterns)
         {
-            // Quick & naive approach to handle simple wildcard or folder patterns
-            // for demonstration:
-            // e.g. "bin/" or "*.exe"
-
             if (PatternMatches(relativePath, pattern))
             {
                 return true;
