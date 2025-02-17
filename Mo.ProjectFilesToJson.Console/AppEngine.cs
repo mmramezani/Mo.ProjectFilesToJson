@@ -30,9 +30,9 @@ public class AppEngine
         {
             Console.WriteLine("Previous settings found:");
             Helper.PrintUserSettings(lastUsedSettings);
-            Console.WriteLine("Do you want to continue with these settings? (Y/N)");
+            Console.WriteLine("Do you want to continue with these settings? (Y/N) [Enter = Yes]");
             var choice = Console.ReadLine()?.Trim().ToLower();
-            if (choice == "y" || choice == "yes")
+            if (string.IsNullOrEmpty(choice) || choice == "y" || choice == "yes")
             {
                 finalSettings = lastUsedSettings;
             }
